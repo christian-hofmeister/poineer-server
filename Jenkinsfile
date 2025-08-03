@@ -7,6 +7,15 @@ pipeline {
     }
 
     stages {
+
+        stage('Check .NET version') {
+            steps {
+            sh 'which dotnet'
+            sh 'dotnet --version'
+            sh 'echo $PATH'
+        }
+}
+
         stage('Checkout') {
             steps {
                 checkout scm
