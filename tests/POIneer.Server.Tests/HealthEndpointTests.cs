@@ -7,23 +7,19 @@ namespace POIneer.Server.Tests
 
     public class HealthEndpointTests : IClassFixture<TestApiFactory>
     {
-        private readonly TestApiFactory _factory;
+        private readonly HttpClient _client;
 
         public HealthEndpointTests(TestApiFactory factory)
         {
-            _factory = factory;
+            // Create a client from the custom factory
+            _client = factory.CreateClient();
         }
 
         [Fact]
         public async Task HealthEndpoint_Returns_OK()
         {
-            // Arrange
-            var client = _factory.CreateClient();
+            var response = await _client.GetAsync("/health");
 
-            // Act
-            var response = await client.GetAsync("/health");
-
-            // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();

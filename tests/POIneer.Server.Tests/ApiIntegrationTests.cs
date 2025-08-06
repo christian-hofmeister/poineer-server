@@ -6,11 +6,11 @@ using Xunit;
 namespace POIneer.Server.Tests
 {
     // This test spins up the API in memory and sends real HTTP requests to it
-    public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<POIneer.Server.Program>>
+    public class ApiIntegrationTests : IClassFixture<TestApiFactory>
     {
-        private readonly WebApplicationFactory<POIneer.Server.Program> _factory;
+        private readonly TestApiFactory _factory;
 
-        public ApiIntegrationTests(WebApplicationFactory<POIneer.Server.Program> factory)
+        public ApiIntegrationTests(TestApiFactory factory)
         {
             _factory = factory;
         }

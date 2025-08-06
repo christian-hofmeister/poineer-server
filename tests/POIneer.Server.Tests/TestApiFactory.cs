@@ -1,6 +1,7 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Hosting;
 
 namespace POIneer.Server.Tests
 {
@@ -17,10 +18,9 @@ namespace POIneer.Server.Tests
                 // You can configure test-specific services here if needed
             });
 
-            builder.Configure(app =>
-            {
-                // We do not add HTTPS redirection here, so tests won't try to redirect
-            });
+
+            builder.UseEnvironment("Testing");
+
         }
     }
 }
