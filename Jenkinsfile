@@ -8,6 +8,12 @@ pipeline {
     }
 
     stages {
+        stage('Clean') {
+            steps {
+                sh 'dotnet clean POIneer.Server.sln'
+            }
+        }
+
         stage('Restore') {
             steps {
                 script {
