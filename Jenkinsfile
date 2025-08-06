@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOTNET_VERSION = "9.0.303"
         SOLUTION_FILE  = "POIneer.Server.sln"
-        TEST_PROJECT   = "tests/POIneer.Server.Tests/POIneer.Tests.csproj"
+        TEST_PROJECT   = "tests/POIneer.Server.Tests/POIneer.Server.Tests.csproj"
     }
 
     stages {
