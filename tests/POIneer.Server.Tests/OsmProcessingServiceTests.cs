@@ -3,7 +3,7 @@ using Xunit;
 using POIneer.Server.Services;
 using Microsoft.Data.Sqlite;
 
-namespace POIneer.Tests;
+namespace POIneer.Server.Tests;
 
 public class OsmProcessingServiceTests
 {

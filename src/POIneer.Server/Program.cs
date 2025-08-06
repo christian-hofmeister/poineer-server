@@ -4,7 +4,6 @@ using Microsoft.Extensions.Hosting;
 using POIneer.Server.Services;
 using Microsoft.OpenApi.Models;
 
-
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -36,5 +35,11 @@ var processor = new OsmProcessingService();
 
 app.UseHttpsRedirection();
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok("API is running"));
 
 app.Run();
+
+namespace POIneer.Server
+{
+    public partial class Program { }
+}
