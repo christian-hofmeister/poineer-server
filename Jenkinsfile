@@ -7,10 +7,19 @@ pipeline {
         TEST_PROJECT   = "tests/POIneer.Server.Tests/POIneer.Server.Tests.csproj"
     }
 
+    options {
+        skipDefaultCheckout true
+    }
+
     stages {
-        stage('Clean') {
+        stage('Clean Workspace') {
             steps {
-                sh 'dotnet clean POIneer.Server.sln'
+                cleanWs()
+            }
+        }
+        stage('Checkout') {
+            steps {
+                checkout scm
             }
         }
 
