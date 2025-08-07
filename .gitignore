@@ -54,3 +54,5 @@ TestResult.xml
 nunit-*.xml
 
 *.sqlite
+
+db/sqlite/poineer.db
