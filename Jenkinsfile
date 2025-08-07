@@ -17,6 +17,7 @@ pipeline {
                 cleanWs()
             }
         }
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -28,6 +29,29 @@ pipeline {
                 script {
                     echo "Restoring .NET dependencies..."
                     sh "dotnet restore ${SOLUTION_FILE}"
+                }
+            }
+        }
+
+        stage('Install Tools') {
+            steps {
+                script {
+                    echo "Restoring .NET local tools..."
+                    // Tool-Manifest anlegen, falls nicht vorhanden
+                    sh "[ -f .config/dotnet-tools.json ] || dotnet new tool-manifest"
+                    // Tool installieren, falls nicht vorhanden
+                    sh "dotnet tool install dotnet-outdated-tool || true"
+                    // Tools synchronisieren
+                    sh "dotnet tool restore"
+                }
+            }
+        }
+
+        stage('Check for outdated packages') {
+            steps {
+                script {
+                    echo "Checking for outdated NuGet packages..."
+                    sh "dotnet tool run dotnet-outdated --fail-on-updates --ignore-failed-sources"
                 }
             }
         }
