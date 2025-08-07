@@ -48,4 +48,19 @@ public class OsmProcessingService
             insert.ExecuteNonQuery();
         }
     }
+
+    public async Task CreateSchemaAsync(SqliteConnection connection)
+    {
+        var cmd = connection.CreateCommand();
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS poi (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                category TEXT,
+                lat REAL,
+                lon REAL
+            );";
+        await cmd.ExecuteNonQueryAsync();
+    }
+
 }

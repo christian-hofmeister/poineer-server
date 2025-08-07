@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using POIneer.Server.Services;
 using Microsoft.OpenApi.Models;
 
@@ -29,12 +26,27 @@ if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
     });
 }
 
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    Console.WriteLine($"Current environment: {app.Environment.EnvironmentName}");
+
+    app.UseHttpsRedirection();
+}
+
 
 
 var processor = new OsmProcessingService();
 //processor.GenerateDummySQLite("Data/berlin.sqlite");
 
-app.UseHttpsRedirection();
+
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok("API is running"));
 
 app.Run();
+
+// This partial class allows the Program class to be referenced in tests
+// without needing to change the namespace or structure of the main application code.
+namespace POIneer.Server
+{
+    public partial class Program { }
+}
