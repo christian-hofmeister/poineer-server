@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/" # Root, wo dein .sln liegt
+    schedule:
+      interval: "daily" # oder "weekly", "monthly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "autoupdate"
+    ignore:
+      - dependency-name: "Microsoft.NET.Test.Sdk"
+        versions: [">=18.0.0"] # Optional: Blocke bestimmte Updates
+
