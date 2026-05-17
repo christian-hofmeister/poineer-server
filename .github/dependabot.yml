@@ -1,0 +1,22 @@
+version: 2
+
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+
+    open-pull-requests-limit: 5
+
+    # Optionally, you can group updates together by uncommenting the following lines and adjusting the patterns as needed.
+    groups:
+      dotnet-packages:
+        patterns:
+          - "*"
+    # You can also specify ignored updates to prevent certain updates from being created. For example, to ignore all major version updates, you can use the following configuration:
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
