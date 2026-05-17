@@ -1,6 +1,21 @@
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+using POIneer.Server.Api.Endpoints;
 
-app.MapGet("/", () => "Hello World!");
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+app.MapHealthEndpoints();
+
+// Configure the HTTP request pipeline.
+app.MapOpenApi();
+
+if (app.Environment.IsDevelopment())
+{
+    //
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.Run();
