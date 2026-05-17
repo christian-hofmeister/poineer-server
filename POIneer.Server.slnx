@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/POIneer.Server/POIneer.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/POIneer.Server.ContractTests/POIneer.Server.ContractTests.csproj" />
+    <Project Path="tests/POIneer.Server.IntegrationTests/POIneer.Server.IntegrationTests.csproj" />
+    <Project Path="tests/POIneer.Server.UnitTests/POIneer.Server.UnitTests.csproj" />
+  </Folder>
+</Solution>

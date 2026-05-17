@@ -1,9 +1,0 @@
-[
-  {
-    "id": "berlin",
-    "name": "Berlin",
-    "url": "http://localhost:5000/api/regions/berlin/sqlite",
-    "updated": "2025-07-28T08:00:00Z",
-    "size": 1234567
-  }
-]
