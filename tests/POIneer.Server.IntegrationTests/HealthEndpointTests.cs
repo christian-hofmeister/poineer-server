@@ -25,4 +25,11 @@ public sealed class HealthEndpointTests
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Fact]
+    public void Temporary_CI_Should_Fail()
+    {
+        //
+        Assert.True(false);
+    }
 }
