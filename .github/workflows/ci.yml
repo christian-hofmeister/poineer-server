@@ -77,8 +77,10 @@ jobs:
           reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" -targetdir:coverage-report -reporttypes:TextSummary "-filefilters:-*obj*" "-classfilters:-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*"
           echo "==== Coverage Summary ===="
           cat coverage-report/Summary.txt
-          PCT=$(grep -Eo 'Line coverage: [0-9]+\.[0-9]+' coverage-report/Summary.txt | awk '{print $3}')
-          PCT_INT=${PCT%.*}
+          PCT_LINE=$(grep -E 'Line coverage:' coverage-report/Summary.txt | head -n1)
+          PCT=$(echo "$PCT_LINE" | grep -Eo '[0-9]+([.,][0-9]+)?%' | tr -d '%')
+          PCT=${PCT/,/.}
+          PCT_INT=${PCT%%.*}
           echo "Line coverage = ${PCT}%"
           if [ "${PCT_INT}" -lt 60 ]; then
             echo "Coverage below threshold (60%). Failing."
