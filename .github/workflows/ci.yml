@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ develop, main, 'release/**' ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  build_test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: |
+            10.0.x
+            9.0.x
+            8.0.x
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Verify formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Check if 'dotnet format' is available as a built-in command (introduced in .NET 7)
+          if dotnet help format >/dev/null 2>&1; then
+            echo "Using built-in 'dotnet format'..."
+            dotnet format --verify-no-changes --no-restore
+            exit 0
+          fi
+
+          echo "Falling back to global tool 'dotnet-format'..."
+          dotnet tool install -g dotnet-format
+
+          # Try to find a solution file within the repository (up to 3 levels deep)
+          SLN="$(find . -maxdepth 3 -type f -name '*.sln' -print -quit || true)"
+          if [ -n "${SLN}" ]; then
+            echo "Running dotnet-format on solution: ${SLN}"
+            ~/.dotnet/tools/dotnet-format --check "${SLN}"
+          else
+            echo "No solution found; running on folder."
+            ~/.dotnet/tools/dotnet-format --check --folder .
+          fi
+
+      - name: Build (Release)
+        run: dotnet build --configuration Release --no-restore /warnaserror
+
+      - name: Test with coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test --configuration Release --no-build \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:Exclude="[POIneer.Render.TestHelpers]*" \
+            /p:CoverletOutput=./TestResults/Coverage/
+
+      - name: Enforce minimum coverage (60%)
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          reportgenerator "-reports:**/TestResults/Coverage/coverage.cobertura.xml" -targetdir:coverage-report -reporttypes:TextSummary
+          echo "==== Coverage Summary ===="
+          cat coverage-report/Summary.txt
+          PCT=$(grep -Eo 'Line coverage: [0-9]+\.[0-9]+' coverage-report/Summary.txt | awk '{print $3}')
+          PCT_INT=${PCT%.*}
+          echo "Line coverage = ${PCT}%"
+          if [ "${PCT_INT}" -lt 60 ]; then
+            echo "Coverage below threshold (60%). Failing."
+            exit 1
+          fi
