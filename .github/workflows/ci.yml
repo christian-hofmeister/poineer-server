@@ -65,10 +65,8 @@ jobs:
         run: |
           set -euo pipefail
           dotnet test --configuration Release --no-build \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:Exclude="[POIneer.Render.TestHelpers]*" \
-            /p:CoverletOutput=./TestResults/Coverage/
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults
 
       - name: Enforce minimum coverage (60%)
         shell: bash
@@ -76,7 +74,7 @@ jobs:
           set -euo pipefail
           dotnet tool install -g dotnet-reportgenerator-globaltool
           export PATH="$PATH:$HOME/.dotnet/tools"
-          reportgenerator "-reports:**/TestResults/Coverage/coverage.cobertura.xml" -targetdir:coverage-report -reporttypes:TextSummary
+          reportgenerator "-reports:**/TestResults/**/coverage.cobertura.xml" -targetdir:coverage-report -reporttypes:TextSummary "-filefilters:-*obj*" "-classfilters:-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*"
           echo "==== Coverage Summary ===="
           cat coverage-report/Summary.txt
           PCT=$(grep -Eo 'Line coverage: [0-9]+\.[0-9]+' coverage-report/Summary.txt | awk '{print $3}')
