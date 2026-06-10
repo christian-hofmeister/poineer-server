@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\POIneer.Server\POIneer.Server.csproj" />
+  </ItemGroup>
+
 </Project>
