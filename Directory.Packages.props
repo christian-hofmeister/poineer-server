@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup Label="API Documentation">
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
