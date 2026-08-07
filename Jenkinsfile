@@ -48,19 +48,35 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Test with Coverage') {
             steps {
                 sh '''
+                    set -eux
+
                     dotnet test "$SOLUTION_FILE" \
                         --configuration "$CONFIGURATION" \
                         --no-build \
+                        --results-directory TestResults \
                         --logger "trx;LogFileName=test-results.trx" \
-                        --results-directory TestResults
+                        --collect:"XPlat Code Coverage;Format=cobertura"
+
+                    echo "[diag] Coverage files:"
+                    find . -type f -name "coverage.cobertura.xml" -print
                 '''
             }
+
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'TestResults/**/*.trx'
+
+                    recordCoverage(
+                        tools: [[
+                            parser: 'COBERTURA',
+                            pattern: '**/TestResults/**/coverage.cobertura.xml'
+                        ]],
+                        sourceCodeRetention: 'LAST_BUILD',
+                        failOnError: true
+                    )
                 }
             }
         }
