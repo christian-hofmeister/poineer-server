@@ -11,12 +11,9 @@ builder.Services.AddSingleton<IDatasetMetadataProvider, HardcodedDatasetMetadata
 builder.Services.AddSingleton<IRegionProvider, HardcodedRegionProvider>();
 
 var app = builder.Build();
-
 var api = app.MapGroup("/api");
-api.MapHealthEndpoints();
-api.MapRegionEndpoints();
 
-// Configure the HTTP request pipeline.
+MapEndpoints(api);
 app.MapOpenApi();
 
 if (app.Environment.IsDevelopment())
@@ -27,3 +24,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+static void MapEndpoints(RouteGroupBuilder api)
+{
+    api.MapHealthEndpoints();
+    api.MapRegionEndpoints();
+}

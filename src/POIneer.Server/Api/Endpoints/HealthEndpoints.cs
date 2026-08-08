@@ -10,8 +10,9 @@ public static class HealthEndpoints
 
         group.MapGet("", GetHealthAsync)
             .WithName("GetHealth")
-            .WithSummary("Returns the health status of the API.")
+            .WithSummary("Get API health status")
             .WithDescription("Simple health endpoint for monitoring and uptime checks.")
+            .WithTags("Health")
             .Produces<HealthResponse>(StatusCodes.Status200OK);
 
         return endpoints;

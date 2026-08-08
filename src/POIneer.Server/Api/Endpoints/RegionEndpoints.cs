@@ -12,6 +12,9 @@ public static class RegionEndpoints
             (IRegionProvider regionProvider) =>
                 Results.Ok(regionProvider.GetRegions()))
             .WithName("GetRegions")
+            .WithSummary("Get available regions")
+            .WithDescription(
+                "Returns all regions currently available for offline datasets.")
             .WithTags("Regions")
             .Produces<IReadOnlyCollection<RegionResponse>>(StatusCodes.Status200OK);
 
