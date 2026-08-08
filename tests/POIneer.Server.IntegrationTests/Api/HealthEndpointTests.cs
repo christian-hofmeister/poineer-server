@@ -1,5 +1,3 @@
-
-
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -20,7 +18,7 @@ public sealed class HealthEndpointTests
     public async Task GetHealth_ReturnsOk()
     {
         // Act
-        var response = await _client.GetAsync("/health");
+        var response = await _client.GetAsync("/api/health");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
