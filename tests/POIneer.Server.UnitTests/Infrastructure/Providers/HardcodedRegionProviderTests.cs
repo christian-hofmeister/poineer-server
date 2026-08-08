@@ -18,4 +18,18 @@ public class HardcodedRegionProviderTests
 
         Assert.Equal("Berlin", berlin.Name);
     }
+
+    [Fact]
+    public void GetRegions_BerlinRegion_HasCorrectCountryAndCategory()
+    {
+        var sut = new HardcodedRegionProvider();
+
+        var regions = sut.GetRegions();
+
+        var berlin = Assert.Single(regions, region => region.Id == "berlin");
+
+        Assert.Equal("Germany", berlin.Country);
+        Assert.Equal("City", berlin.Category);
+    }
+
 }
