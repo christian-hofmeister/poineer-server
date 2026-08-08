@@ -54,4 +54,24 @@ public sealed class RegionResponseTests
         Assert.Equal("DE", response.Country);
         Assert.Equal("city", response.Category);
     }
+
+    [Fact]
+    public void Deserialize_ShouldThrowJsonException_WhenRequiredPropertyIsMissing()
+    {
+        // Arrange
+        const string jsonMissingCategory =
+            """
+            {
+              "id": "berlin",
+              "name": "Berlin",
+              "country": "DE"
+            }
+            """;
+
+        // Act
+        var action = () => JsonSerializer.Deserialize<RegionResponse>(jsonMissingCategory);
+
+        // Assert
+        Assert.Throws<JsonException>(action);
+    }
 }
