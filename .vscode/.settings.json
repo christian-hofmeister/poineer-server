@@ -1,0 +1,15 @@
+{
+  "files.watcherExclude": {
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/.git/**": true,
+    "**/coverage-report/**": true,
+    "**/TestResults/**": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/coverage-report": true,
+    "**/TestResults": true
+  }
+}
