@@ -11,8 +11,10 @@ builder.Services.AddSingleton<IDatasetMetadataProvider, HardcodedDatasetMetadata
 builder.Services.AddSingleton<IRegionProvider, HardcodedRegionProvider>();
 
 var app = builder.Build();
-app.MapHealthEndpoints();
-app.MapRegionEndpoints();
+
+var api = app.MapGroup("/api");
+api.MapHealthEndpoints();
+api.MapRegionEndpoints();
 
 // Configure the HTTP request pipeline.
 app.MapOpenApi();
