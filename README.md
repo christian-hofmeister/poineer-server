@@ -81,7 +81,6 @@ map availability, geographic enrichment and the demand-tracking proposal.
 
 Planned:
 
-- Region endpoints
 - Dataset metadata
 - Dataset downloads
 - API versioning

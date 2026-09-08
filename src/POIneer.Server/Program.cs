@@ -1,6 +1,5 @@
 using POIneer.Server.Api.Endpoints;
 using POIneer.Server.Application.Abstractions;
-using POIneer.Server.Application.Regions;
 using POIneer.Server.Infrastructure.Providers;
 using POIneer.Server.Application.Catalog;
 using POIneer.Server.Infrastructure.Catalog;
@@ -10,7 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IDatasetMetadataProvider, HardcodedDatasetMetadataProvider>();
-builder.Services.AddSingleton<IRegionProvider, HardcodedRegionProvider>();
 builder.Services.AddSingleton<IRegionBoundsSource, ConfiguredRegionBoundsSource>();
 builder.Services.AddSingleton<DatasetCatalog>();
 builder.Services.AddSingleton<ICatalogSource>(services =>
@@ -40,6 +38,5 @@ app.Run();
 static void MapEndpoints(RouteGroupBuilder api)
 {
     api.MapHealthEndpoints();
-    api.MapRegionEndpoints();
     api.MapCatalogEndpoints();
 }

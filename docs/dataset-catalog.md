@@ -2,8 +2,9 @@
 
 `GET /api/datasets` returns an array of currently published releases containing
 SQLite and, when available, PMTiles artifacts.
-The existing `/api/regions` and dataset metadata DTO remain unchanged. The
-legacy hardcoded region endpoint is not an availability catalog.
+Region metadata is included in catalog entries. The unused legacy `/api/regions`
+endpoint has been removed; clients use `/api/datasets` for available regions
+and their artifacts. The existing dataset metadata DTO remains unchanged.
 
 The catalog joins current manifests to `regions.json` by exact, case-sensitive
 region ID. Display records alone never make a dataset available. Invalid or
