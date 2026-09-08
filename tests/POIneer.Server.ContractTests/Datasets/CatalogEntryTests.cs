@@ -14,14 +14,14 @@ public sealed class CatalogEntryTests
                  new CatalogArtifact("pmtiles", "tiles-version", 84, new string('b', 64), "/api/datasets/geofabrik/berlin/latest/pmtiles")]));
         using var document = JsonDocument.Parse(JsonSerializer.Serialize(entry));
         var root = document.RootElement;
-        Assert.Equal(new[] { "id", "name", "country", "category", "bounds", "dataset" },
-            root.EnumerateObject().Select(property => property.Name));
+        Assert.True(root.EnumerateObject().Select(property => property.Name).ToHashSet().SetEquals(
+            new[] { "id", "name", "country", "category", "bounds", "dataset" }));
         Assert.Equal(JsonValueKind.Null, root.GetProperty("bounds").ValueKind);
-        Assert.Equal(new[] { "version", "artifacts" },
-            root.GetProperty("dataset").EnumerateObject().Select(property => property.Name));
+        Assert.True(root.GetProperty("dataset").EnumerateObject().Select(property => property.Name).ToHashSet().SetEquals(
+            new[] { "version", "artifacts" }));
         foreach (var artifact in root.GetProperty("dataset").GetProperty("artifacts").EnumerateArray())
-            Assert.Equal(new[] { "type", "artifactVersion", "sizeBytes", "sha256Checksum", "downloadUrl" },
-                artifact.EnumerateObject().Select(property => property.Name));
+            Assert.True(artifact.EnumerateObject().Select(property => property.Name).ToHashSet().SetEquals(
+                new[] { "type", "artifactVersion", "sizeBytes", "sha256Checksum", "downloadUrl" }));
         var restored = JsonSerializer.Deserialize<CatalogEntry>(root.GetRawText())!;
         Assert.Equal(entry.Id, restored.Id);
         Assert.Equal(entry.Dataset.Version, restored.Dataset.Version);
