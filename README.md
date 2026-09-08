@@ -74,6 +74,10 @@ Current:
 - Swagger UI
 - Test project setup
 - Centralized package management
+- Dataset catalog at `GET /api/datasets` with validated local manifest discovery
+
+See [Dataset catalog](docs/dataset-catalog.md) for configuration, fixture limitations,
+map availability, geographic enrichment and the demand-tracking proposal.
 
 Planned:
 
