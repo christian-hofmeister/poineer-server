@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using POIneer.Server.Application.Catalog;
 using POIneer.Server.Contracts.Catalog;
+using POIneer.Server.Infrastructure.Catalog;
 
 namespace POIneer.Server.IntegrationTests.Api;
 
@@ -25,9 +26,31 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
         Assert.Equal("geofabrik/europe/germany/berlin", berlin.Id);
         Assert.Equal("Berlin", berlin.Name);
         Assert.Equal("4-d790344f01234567", berlin.Dataset.Version);
-        Assert.Equal(187654321, berlin.Dataset.SizeBytes);
+        var artifact = Assert.Single(berlin.Dataset.Artifacts);
+        Assert.Equal("sqlite", artifact.Type);
+        Assert.Equal(187654321, artifact.SizeBytes);
         Assert.Null(berlin.Bounds);
-        Assert.Equal("/api/datasets/geofabrik/europe/germany/berlin/latest", berlin.Dataset.DownloadUrl);
+        Assert.Equal("/api/datasets/geofabrik/europe/germany/berlin/latest/sqlite", artifact.DownloadUrl);
+    }
+
+    [Fact]
+    public async Task GetDatasets_ExposesBothArtifactsFromProducerFixture()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.AddSingleton<ICatalogSource>(new TwoArtifactSource())));
+        using var client = factory.CreateClient();
+        var entries = await client.GetFromJsonAsync<CatalogEntry[]>("/api/datasets");
+        var dataset = Assert.Single(entries!).Dataset;
+        Assert.Equal("4-abcdef0123456789", dataset.Version);
+        Assert.Equal(2, dataset.Artifacts.Count);
+        var sqlite = Assert.Single(dataset.Artifacts, artifact => artifact.Type == "sqlite");
+        var tiles = Assert.Single(dataset.Artifacts, artifact => artifact.Type == "pmtiles");
+        Assert.Equal("4-d790344f01234567", sqlite.ArtifactVersion);
+        Assert.Equal("12-0123456789abcdef", tiles.ArtifactVersion);
+        Assert.Equal("/api/datasets/geofabrik/europe/germany/berlin/latest/sqlite", sqlite.DownloadUrl);
+        Assert.Equal("/api/datasets/geofabrik/europe/germany/berlin/latest/pmtiles", tiles.DownloadUrl);
+        Assert.Equal(187654321, tiles.SizeBytes);
+        Assert.Equal("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", tiles.Sha256Checksum);
     }
 
     [Fact]
@@ -68,6 +91,17 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
             .GetProperty("get").GetProperty("responses");
         Assert.True(responses.TryGetProperty("200", out _));
         Assert.True(responses.TryGetProperty("503", out _));
+    }
+
+    private sealed class TwoArtifactSource : ICatalogSource
+    {
+        public async Task<CatalogSnapshot> ReadAsync(CancellationToken cancellationToken)
+        {
+            var json = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory,
+                "Fixtures", "berlin-with-pmtiles.json"), cancellationToken);
+            var dataset = ManifestReader.Read("geofabrik/europe/germany/berlin/manifest.json", json);
+            return new CatalogSnapshot([new(dataset.RegionId, "Berlin", "Germany", "City")], [dataset]);
+        }
     }
 
     private sealed class FailingSource : ICatalogSource

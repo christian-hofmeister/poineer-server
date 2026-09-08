@@ -11,8 +11,10 @@ public sealed class DatasetCatalogTests
     {
         var source = new Source(new CatalogSnapshot(
             [new("geofabrik/berlin", "Berlin", null, "City"), new("unpublished", "Other", null, null)],
-            [new("geofabrik/berlin", "4-1111111111111111", "3-2222222222222222", 42, new string('a', 64)),
-             new("GEOFABRIK/BERLIN", "ignored", "ignored", 1, "ignored")]));
+            [new("geofabrik/berlin", "4-1111111111111111",
+                [new("sqlite", "3-2222222222222222", 42, new string('a', 64)),
+                 new("pmtiles", "12-3333333333333333", 84, new string('b', 64))]),
+             new("GEOFABRIK/BERLIN", "ignored", [])]));
         var sut = new DatasetCatalog(source, new BoundsSource(), NullLogger<DatasetCatalog>.Instance);
         using var cancellation = new CancellationTokenSource();
 
@@ -26,10 +28,17 @@ public sealed class DatasetCatalogTests
         Assert.Equal(52, entry.Bounds!.MinLat);
         Assert.Equal(14, entry.Bounds.MaxLon);
         Assert.Equal("4-1111111111111111", entry.Dataset.Version);
-        Assert.Equal("3-2222222222222222", entry.Dataset.ArtifactVersion);
-        Assert.Equal(42, entry.Dataset.SizeBytes);
-        Assert.Equal(new string('a', 64), entry.Dataset.Sha256Checksum);
-        Assert.Equal("/api/datasets/geofabrik/berlin/latest", entry.Dataset.DownloadUrl);
+        Assert.Equal(2, entry.Dataset.Artifacts.Count);
+        var sqlite = Assert.Single(entry.Dataset.Artifacts, artifact => artifact.Type == "sqlite");
+        Assert.Equal("3-2222222222222222", sqlite.ArtifactVersion);
+        Assert.Equal(42, sqlite.SizeBytes);
+        Assert.Equal(new string('a', 64), sqlite.Sha256Checksum);
+        Assert.Equal("/api/datasets/geofabrik/berlin/latest/sqlite", sqlite.DownloadUrl);
+        var tiles = Assert.Single(entry.Dataset.Artifacts, artifact => artifact.Type == "pmtiles");
+        Assert.Equal("12-3333333333333333", tiles.ArtifactVersion);
+        Assert.Equal(84, tiles.SizeBytes);
+        Assert.Equal(new string('b', 64), tiles.Sha256Checksum);
+        Assert.Equal("/api/datasets/geofabrik/berlin/latest/pmtiles", tiles.DownloadUrl);
     }
 
     private sealed class Source(CatalogSnapshot snapshot) : ICatalogSource

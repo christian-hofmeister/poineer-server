@@ -1,6 +1,7 @@
 # Dataset catalog
 
-`GET /api/datasets` returns an array of currently published SQLite datasets.
+`GET /api/datasets` returns an array of currently published releases containing
+SQLite and, when available, PMTiles artifacts.
 The existing `/api/regions` and dataset metadata DTO remain unchanged. The
 legacy hardcoded region endpoint is not an availability catalog.
 
@@ -40,7 +41,12 @@ application catalog mapping. Replace its local adapter for remote storage.
 Producer manifest JSON is separate from public response DTOs. Full draft-v1
 validation rejects unknown fields and types, unsupported versions, unsafe keys,
 bad filenames, invalid dates, nonpositive sizes and malformed SHA-256 values.
-Both release and SQLite artifact versions are returned because they can differ.
+`dataset.version` identifies the release. `dataset.artifacts` lists every
+available artifact with an explicit `type` (`sqlite` or `pmtiles`), its own
+`artifactVersion`, `sizeBytes`, `sha256Checksum` and `downloadUrl`. A SQLite-only
+release has one entry; a release with tiles has both. Clients select by type,
+not array position. Release and artifact versions can differ, as can the versions
+of SQLite and PMTiles within one release.
 
 ## Geography and map interactions
 
@@ -81,12 +87,15 @@ matching. On selecting a known region ID, absence from a successfully fetched
 catalog means no dataset is currently offered for that ID. No matching box means
 no known coverage, not proof of unavailable coverage when bounds are missing.
 On HTTP 503, show availability as temporarily unknown and allow retry.
-Compare the installed SQLite artifact version/checksum with `dataset` to detect
-updates; release version alone can change when a different artifact changes.
+For each installed artifact, select the matching `type` in `dataset.artifacts`
+and compare its version/checksum to detect updates independently. Release
+version alone can change when a different artifact changes.
 
 ## Download boundary
 
-`dataset.downloadUrl` reserves `/api/datasets/{hierarchical-region-id}/latest`.
+Each `dataset.artifacts[].downloadUrl` reserves
+`/api/datasets/{hierarchical-region-id}/latest/{type}`, where `type` is `sqlite`
+or `pmtiles`.
 The download handler, redirects, caching and URL renewal belong to renderer
 issue #203 and are not implemented here; these URLs currently return 404.
 Clients must follow API-provided URLs once transport is enabled and must not

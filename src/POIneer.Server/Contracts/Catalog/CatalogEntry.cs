@@ -18,6 +18,10 @@ public sealed record CatalogBounds(
 
 public sealed record CatalogDataset(
     [property: JsonPropertyName("version")] string Version,
+    [property: JsonPropertyName("artifacts")] IReadOnlyCollection<CatalogArtifact> Artifacts);
+
+public sealed record CatalogArtifact(
+    [property: JsonPropertyName("type")] string Type,
     [property: JsonPropertyName("artifactVersion")] string ArtifactVersion,
     [property: JsonPropertyName("sizeBytes")] long SizeBytes,
     [property: JsonPropertyName("sha256Checksum")] string Sha256Checksum,

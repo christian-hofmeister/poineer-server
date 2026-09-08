@@ -12,7 +12,7 @@ public static class CatalogEndpoints
             .WithName("GetDatasetCatalog")
             .WithTags("Datasets")
             .WithSummary("Get currently published offline datasets")
-            .WithDescription("Returns validated current SQLite releases joined to region metadata. Bounds are null until a geographic source is available. Download URLs reserve the server route for the separate download transport implementation.")
+            .WithDescription("Returns validated current releases with SQLite and optional PMTiles artifacts joined to region metadata. Each artifact includes its type, version, size, checksum and download URL. Bounds are null until a geographic source is available. Download URLs reserve the server routes for the separate download transport implementation.")
             .Produces<IReadOnlyCollection<CatalogEntry>>()
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
         return endpoints;

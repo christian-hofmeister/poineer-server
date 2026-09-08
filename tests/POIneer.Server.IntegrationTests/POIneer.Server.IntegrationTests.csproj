@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Content Include="../Fixtures/contracts/region-manifest/v1/examples/berlin-with-pmtiles.json" Link="Fixtures/berlin-with-pmtiles.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

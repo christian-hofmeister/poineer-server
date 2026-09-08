@@ -30,8 +30,17 @@ public sealed class ManifestReaderTests
         }
         var dataset = ManifestReader.Read(Key, json);
         Assert.Equal("geofabrik/europe/germany/berlin", dataset.RegionId);
-        Assert.True(dataset.SizeBytes > 0);
-        Assert.Equal(64, dataset.Sha256.Length);
+        using var document = JsonDocument.Parse(json);
+        var expected = document.RootElement.GetProperty("artifacts").EnumerateArray().ToArray();
+        Assert.Equal(document.RootElement.GetProperty("releaseVersion").GetString(), dataset.ReleaseVersion);
+        Assert.Equal(expected.Length, dataset.Artifacts.Count);
+        foreach (var artifact in dataset.Artifacts)
+        {
+            var original = Assert.Single(expected, item => item.GetProperty("type").GetString() == artifact.Type);
+            Assert.Equal(original.GetProperty("artifactVersion").GetString(), artifact.ArtifactVersion);
+            Assert.Equal(original.GetProperty("sizeBytes").GetInt64(), artifact.SizeBytes);
+            Assert.Equal(original.GetProperty("sha256").GetString(), artifact.Sha256);
+        }
     }
 
     [Fact]

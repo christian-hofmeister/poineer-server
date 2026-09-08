@@ -31,7 +31,7 @@ public static class ManifestReader
         if (artifacts.ValueKind != JsonValueKind.Array || artifacts.GetArrayLength() is < 1 or > 2)
             throw new JsonException("artifacts must contain SQLite and optionally PMTiles.");
         var types = new HashSet<string>(StringComparer.Ordinal);
-        PublishedDataset? dataset = null;
+        var publishedArtifacts = new List<PublishedArtifact>();
         foreach (var artifact in artifacts.EnumerateArray())
         {
             RequireFields(artifact, "type", "artifactVersion", "objectKey", "sizeBytes", "sha256");
@@ -45,9 +45,10 @@ public static class ManifestReader
             if (sizeElement.ValueKind != JsonValueKind.Number || !sizeElement.TryGetInt64(out var size) || size <= 0)
                 throw new JsonException("sizeBytes must be a positive integer.");
             var checksum = ReadString(artifact, "sha256", @"\A[0-9a-f]{64}\z");
-            if (type == "sqlite") dataset = new PublishedDataset(region, release, version, size, checksum);
+            publishedArtifacts.Add(new PublishedArtifact(type, version, size, checksum));
         }
-        return dataset ?? throw new JsonException("Missing SQLite artifact.");
+        if (!types.Contains("sqlite")) throw new JsonException("Missing SQLite artifact.");
+        return new PublishedDataset(region, release, publishedArtifacts);
     }
 
     private static string ReadString(JsonElement element, string field, string pattern)

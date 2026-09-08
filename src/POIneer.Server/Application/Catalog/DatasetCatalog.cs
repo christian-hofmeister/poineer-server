@@ -21,8 +21,9 @@ public sealed class DatasetCatalog(ICatalogSource source, IRegionBoundsSource bo
             var bounds = boundsSource.GetBounds(region.Id);
             entries.Add(new CatalogEntry(region.Id, region.Name, region.Country, region.Category,
                 bounds is null ? null : new CatalogBounds(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon),
-                new CatalogDataset(dataset.ReleaseVersion, dataset.ArtifactVersion, dataset.SizeBytes,
-                    dataset.Sha256, $"/api/datasets/{region.Id}/latest")));
+                new CatalogDataset(dataset.ReleaseVersion, dataset.Artifacts.Select(artifact =>
+                    new CatalogArtifact(artifact.Type, artifact.ArtifactVersion, artifact.SizeBytes,
+                        artifact.Sha256, $"/api/datasets/{region.Id}/latest/{artifact.Type}")).ToArray())));
         }
 
         return entries;
