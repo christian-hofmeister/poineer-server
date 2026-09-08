@@ -20,8 +20,7 @@ public sealed class LocalCatalogSource(string metadataRoot, ILogger<LocalCatalog
         var discoveryRoot = Path.Combine(metadataRoot, "geofabrik");
         // A valid snapshot with no current manifests represents an empty catalog.
         if (!Directory.Exists(discoveryRoot)) return new CatalogSnapshot(regions, datasets);
-        foreach (var path in Directory.EnumerateFiles(discoveryRoot, "*", SearchOption.AllDirectories)
-                     .Where(path => Path.GetFileName(path) == "manifest.json"))
+        foreach (var path in Directory.EnumerateFiles(discoveryRoot, "manifest.json", SearchOption.AllDirectories))
         {
             var key = Path.GetRelativePath(metadataRoot, path).Replace('\\', '/');
             var manifest = await File.ReadAllTextAsync(path, cancellationToken);
