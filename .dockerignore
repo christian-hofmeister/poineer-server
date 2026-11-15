@@ -1,0 +1,11 @@
+**
+!Dockerfile
+!global.json
+!Directory.Build.props
+!Directory.Packages.props
+!src/
+!src/POIneer.Server/
+!src/POIneer.Server/**
+**/bin
+**/obj
+**/appsettings.*.local.json

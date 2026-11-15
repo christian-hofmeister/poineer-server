@@ -37,8 +37,16 @@ Artifact filenames, release version ordering and modification times never
 determine availability. The producer guarantees complete, verified publication;
 this reader validates metadata, not remote artifact bytes.
 
-`ICatalogSource` isolates listing, reads and producer validation from the
-application catalog mapping. Replace its local adapter for remote storage.
+Set `Catalog:MetadataRoot` to a private HTTPS Blob **container URL** (without
+query parameters) to select Azure instead, for example
+`https://example.blob.core.windows.net/metadata`. Keep the same object names
+at the container root. Set `Catalog:ManagedIdentityClientId` to use an assigned
+managed identity, or omit it to use the Azure SDK default credential chain
+(for example, a local Azure CLI sign-in with access to the container).
+See [the Azure dev deployment guide](azure-dev.md).
+
+`ICatalogSource` isolates listing and reads from the application catalog
+mapping. Both sources use the same producer validation.
 Producer manifest JSON is separate from public response DTOs. Full draft-v1
 validation rejects unknown fields and types, unsupported versions, unsafe keys,
 bad filenames, invalid dates, nonpositive sizes and malformed SHA-256 values.
@@ -103,11 +111,11 @@ Clients must follow API-provided URLs once transport is enabled and must not
 construct object keys or bucket paths. No storage credentials or object keys
 are exposed by this catalog.
 
-Metadata discovery uses the metadata root only (planned Azure Blob Storage).
-Artifact references resolve from a separately configured artifact root (planned
-Hetzner), never the manifest directory or metadata root. Both roots may later
-point to one local store. Remote root resolution and byte transport remain in
-#203; no artifact-root setting is consumed by this local catalog adapter.
+Metadata discovery uses `Catalog:MetadataRoot` only. The dev deployment
+provides a separate `Catalog:ArtifactRoot` for the private `regions` container.
+This setting records the artifact location for future transport; the catalog
+adapters do not read artifacts. Root resolution and byte transport remain in
+#203.
 
 ## Lightweight demand tracking proposal
 
