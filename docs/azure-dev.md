@@ -122,9 +122,14 @@ or unreadable snapshot, or a failure to list or download metadata, returns
 container-scoped read role. Download transport is tracked separately and is
 not part of this smoke test.
 
-## Cleanup
+## Optional cleanup when retiring the dev environment
 
-After saving any published data you need, remove the dedicated development group:
+Keep the resource group after deployment and smoke testing. The running dev
+environment and future deployments use the same group.
+
+Delete the group only when you want to retire the entire dev environment.
+This removes the API, the registry and its images, and the storage account
+and its published data. Save any data you want to keep before deleting the group.
 
 ```powershell
 az group delete --name $group
