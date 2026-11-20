@@ -1,9 +1,12 @@
 # Azure development deployment
 
 [Issue #67](https://github.com/christian-hofmeister/poineer-server/issues/67)
-uses one resource group for a Container Apps environment on the
+shares the existing `rg-poineer-dev` resource group in `westeurope` with the
+renderer. It uses the existing `poineer-dev-env` Container Apps environment on the
 [Consumption profile](https://learn.microsoft.com/azure/container-apps/workload-profiles-overview),
-a Basic container registry, a managed identity, and a storage account.
+Basic container registry `poineerdevacr`, and storage account `poineerstoragedev`.
+The server template creates a dedicated API managed identity and its roles;
+supplying an image tag also deploys the API.
 The API accepts HTTPS and can scale to zero. Storage and the registry remain
 billable when no API replica is running. Both Blob containers are private;
 the API identity can read only `metadata` and pull images from the registry.
@@ -11,20 +14,61 @@ The storage account rejects Shared Key authentication.
 
 Run the following Azure CLI commands in PowerShell 7 from the repository root.
 Select the intended development subscription with `az account set` first.
-Use a dedicated resource group. The deploying account needs permission to create
+The shared storage account must already contain private `metadata` and `regions`
+containers. Shared Key access must be disabled. The registry must allow ARM-token
+authentication with legacy registry permissions, and the environment must have a
+Consumption workload profile. These shared resources are referenced with Bicep
+`existing` declarations and are managed outside this server template.
+Their names can be overridden with `existingStorageAccountName`,
+`existingRegistryName`, and `existingEnvironmentName`. Keep them in the same
+resource group and Azure region. The `location` parameter defaults to the
+resource group's region; override it if the shared resources use another region.
+
+The deploying account needs permission to create
 resources and role assignments and to queue ACR builds. The subscription must
 have the `Microsoft.App`, `Microsoft.Storage`, `Microsoft.ContainerRegistry` and
 `Microsoft.ManagedIdentity` providers registered.
+
+## Verified foundation deployment
+
+On 2026-11-20, `poineer-foundation` succeeded in `rg-poineer-dev` in `westeurope`.
+All four required providers were registered and management permissions were
+verified. The deployment added only the `poineer-api-dev` user-assigned identity,
+`Storage Blob Data Reader` on the existing `metadata` container, and `AcrPull`
+on the existing registry. Both role assignments were verified after deployment.
+The shared renderer resources were preserved.
+
+## Verified API deployment
+
+On 2026-11-20, ACR build `cb1` built and pushed
+`poineerdevacr.azurecr.io/poineer-server:3830b50-20261120141116` with digest
+`sha256:811c1a1719fec912e001ecdf68f7110a9ff28eb86ab5b5d19ece6b1552276ee9`.
+Deployment `poineer-app` succeeded, and revision `poineer-api-dev--9f02xw7`
+became ready in the shared Consumption environment. The app uses managed
+identity for registry pulls and catalog access, rejects insecure ingress,
+and has a replica range of zero to two.
+
+API URL: <https://poineer-api-dev.icyocean-acecb4f2.westeurope.azurecontainerapps.io>
+
+Live checks returned `200` with `Healthy` from `/api/health` and `200` from
+`/api/datasets`. The catalog advertised Berlin release `2-290fe03527ac0d03`
+with SQLite and PMTiles artifacts. The release version, artifact versions,
+sizes, and SHA-256 checksums matched the current manifest downloaded from the
+private `metadata` container with Entra authentication. This also verified
+catalog access through the API's managed identity. Artifact contents and download
+transport were not tested by this metadata smoke test.
 
 ## Provision and deploy
 
 ```powershell
 $group = 'rg-poineer-dev'
-$region = 'germanywestcentral'
 $template = 'infra/dev/main.bicep'
 
-az group create --name $group --location $region
-az deployment group create --resource-group $group --name poineer-foundation --template-file $template
+az group show --name $group --output table
+if ($LASTEXITCODE -ne 0) { throw 'Shared development resource group is missing.' }
+az deployment group what-if --resource-group $group --template-file $template --mode Incremental
+if ($LASTEXITCODE -ne 0) { throw 'Foundation preview failed.' }
+az deployment group create --resource-group $group --name poineer-foundation --template-file $template --mode Incremental
 if ($LASTEXITCODE -ne 0) { throw 'Foundation deployment failed.' }
 
 $outputs = az deployment group show --resource-group $group --name poineer-foundation --query properties.outputs -o json | ConvertFrom-Json
@@ -36,7 +80,7 @@ $tag = "$(git rev-parse --short HEAD)-$(Get-Date -AsUTC -Format yyyyMMddHHmmss)"
 az acr build --registry $registry --image "poineer-server:${tag}" --platform linux/amd64 --file Dockerfile .
 if ($LASTEXITCODE -ne 0) { throw 'Image build failed.' }
 
-az deployment group create --resource-group $group --name poineer-app --template-file $template --parameters "imageTag=$tag"
+az deployment group create --resource-group $group --name poineer-app --template-file $template --mode Incremental --parameters "imageTag=$tag"
 if ($LASTEXITCODE -ne 0) { throw 'API deployment failed.' }
 $api = az deployment group show --resource-group $group --name poineer-app --query properties.outputs.apiUrl.value -o tsv
 ```
@@ -122,15 +166,26 @@ or unreadable snapshot, or a failure to list or download metadata, returns
 container-scoped read role. Download transport is tracked separately and is
 not part of this smoke test.
 
-## Optional cleanup when retiring the dev environment
+## Optional cleanup when retiring the API
 
-Keep the resource group after deployment and smoke testing. The running dev
-environment and future deployments use the same group.
+Keep the shared resource group, storage account, registry, and Container Apps
+environment after deployment and smoke testing. The renderer also uses them.
+Never delete the resource group as part of server cleanup.
 
-Delete the group only when you want to retire the entire dev environment.
-This removes the API, the registry and its images, and the storage account
-and its published data. Save any data you want to keep before deleting the group.
+To retire only the API, remove its Container App, its two role assignments, and
+then its managed identity. Resolve the role assignments before deleting the
+identity:
 
 ```powershell
-az group delete --name $group
+$identityId = az identity show --resource-group $group --name poineer-api-dev --query principalId -o tsv
+if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the API identity.' }
+az containerapp delete --resource-group $group --name poineer-api-dev
+if ($LASTEXITCODE -ne 0) { throw 'API deletion failed.' }
+az role assignment delete --assignee $identityId --role 'Storage Blob Data Reader' --scope $outputs.metadataContainerId.value
+if ($LASTEXITCODE -ne 0) { throw 'Metadata role deletion failed.' }
+$registryId = az acr show --name $registry --query id -o tsv
+if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the shared registry.' }
+az role assignment delete --assignee $identityId --role 'AcrPull' --scope $registryId
+if ($LASTEXITCODE -ne 0) { throw 'Registry role deletion failed.' }
+az identity delete --resource-group $group --name poineer-api-dev
 ```

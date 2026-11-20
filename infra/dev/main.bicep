@@ -1,63 +1,41 @@
-@description('Deploy all resources in this Azure region.')
+@description('Azure region of the shared storage account and Container Apps environment.')
 param location string = resourceGroup().location
 
-@description('Leave empty to provision storage and registry before building the image.')
+@description('Existing shared development storage account in this resource group.')
+param existingStorageAccountName string = 'poineerstoragedev'
+
+@description('Existing shared development container registry in this resource group.')
+param existingRegistryName string = 'poineerdevacr'
+
+@description('Existing shared Consumption environment in this resource group.')
+param existingEnvironmentName string = 'poineer-dev-env'
+
+@description('Leave empty to provision only the API identity and its roles before building the image.')
 param imageTag string = ''
 
-var suffix = uniqueString(resourceGroup().id)
 var repository = 'poineer-server'
 
-resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: 'poineer${suffix}'
-  location: location
-  kind: 'StorageV2'
-  sku: {
-    name: 'Standard_LRS'
-  }
-  properties: {
-    allowBlobPublicAccess: false
-    allowSharedKeyAccess: false
-    supportsHttpsTrafficOnly: true
-    minimumTlsVersion: 'TLS1_2'
-  }
+resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+  name: existingStorageAccountName
 }
 
-resource blobs 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+resource blobs 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' existing = {
   parent: storage
   name: 'default'
 }
 
-resource metadata 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+resource metadata 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' existing = {
   parent: blobs
   name: 'metadata'
-  properties: {
-    publicAccess: 'None'
-  }
 }
 
-resource artifacts 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+resource artifacts 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' existing = {
   parent: blobs
   name: 'regions'
-  properties: {
-    publicAccess: 'None'
-  }
 }
 
-resource registry 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
-  name: 'poineer${suffix}'
-  location: location
-  sku: {
-    name: 'Basic'
-  }
-  properties: {
-    adminUserEnabled: false
-    roleAssignmentMode: 'LegacyRegistryPermissions'
-    policies: {
-      azureADAuthenticationAsArmPolicy: {
-        status: 'enabled'
-      }
-    }
-  }
+resource registry 'Microsoft.ContainerRegistry/registries@2025-11-01' existing = {
+  name: existingRegistryName
 }
 
 resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
@@ -87,17 +65,8 @@ resource imagePull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2025-01-01' = if (!empty(imageTag)) {
-  name: 'poineer-dev'
-  location: location
-  properties: {
-    workloadProfiles: [
-      {
-        name: 'Consumption'
-        workloadProfileType: 'Consumption'
-      }
-    ]
-  }
+resource environment 'Microsoft.App/managedEnvironments@2025-01-01' existing = {
+  name: existingEnvironmentName
 }
 
 resource app 'Microsoft.App/containerApps@2025-01-01' = if (!empty(imageTag)) {
@@ -110,7 +79,7 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = if (!empty(imageTag)) {
     }
   }
   properties: {
-    environmentId: environment!.id
+    environmentId: environment.id
     workloadProfileName: 'Consumption'
     configuration: {
       ingress: {
