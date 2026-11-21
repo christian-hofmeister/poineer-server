@@ -58,6 +58,26 @@ private `metadata` container with Entra authentication. This also verified
 catalog access through the API's managed identity. Artifact contents and download
 transport were not tested by this metadata smoke test.
 
+## Verified published artifacts
+
+On 2026-11-21, the existing Berlin release `2-290fe03527ac0d03`, published on
+2026-11-15, was verified without republishing data. `regions.json` contained
+Berlin and the current manifest referenced both artifacts in the private
+`regions` container. Each artifact was downloaded with Entra authentication;
+its actual file size and locally computed SHA-256 matched the manifest:
+
+| Artifact | Size in bytes | SHA-256 |
+| --- | ---: | --- |
+| SQLite | 13881344 | `ee6b495c06c20b64a65b6beaff6dee0c7ec8b5045ecb83b6df3159e3192dd17f` |
+| PMTiles | 41191441 | `7b532985238ab16ce94b08b8a18ababc03dd524d35524499b890e62521c88dce` |
+
+The renderer identity `poineer-render-berlin-dev-identity` had
+`Storage Blob Data Contributor` on each container separately. The live health
+endpoint remained healthy, and the dataset endpoint matched the published
+release and both artifacts' versions, sizes, and checksums. This verifies the
+existing release for the dev catalog; it does not test the pending API download
+transport or validate the semantic contents of SQLite and PMTiles.
+
 ## Provision and deploy
 
 ```powershell
