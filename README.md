@@ -74,10 +74,11 @@ Current:
 - Swagger UI
 - Test project setup
 - Centralized package management
-- Dataset catalog at `GET /api/datasets` with validated local manifest discovery
+- Dataset catalog at `GET /api/datasets` with validated manifests from local files or Azure Blob Storage
 
 See [Dataset catalog](docs/dataset-catalog.md) for configuration, fixture limitations,
 map availability, geographic enrichment and the demand-tracking proposal.
+See [Azure development deployment](docs/azure-dev.md) for the Container Apps setup and Berlin smoke test.
 
 Planned:
 

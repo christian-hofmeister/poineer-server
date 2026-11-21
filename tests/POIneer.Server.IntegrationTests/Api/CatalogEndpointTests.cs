@@ -90,7 +90,9 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
         var responses = document.RootElement.GetProperty("paths").GetProperty("/api/datasets")
             .GetProperty("get").GetProperty("responses");
         Assert.True(responses.TryGetProperty("200", out _));
-        Assert.True(responses.TryGetProperty("503", out _));
+        var unavailable = responses.GetProperty("503");
+        Assert.Contains("insufficient read permissions", unavailable.GetProperty("description").GetString());
+        Assert.True(unavailable.GetProperty("content").TryGetProperty("application/problem+json", out _));
     }
 
     private sealed class TwoArtifactSource : ICatalogSource

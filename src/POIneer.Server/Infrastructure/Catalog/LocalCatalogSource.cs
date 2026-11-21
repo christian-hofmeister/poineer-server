@@ -1,4 +1,3 @@
-using System.Text.Json;
 using POIneer.Server.Application.Catalog;
 using POIneer.Server.Domain.Models;
 
@@ -9,12 +8,7 @@ public sealed class LocalCatalogSource(string metadataRoot, ILogger<LocalCatalog
     public async Task<CatalogSnapshot> ReadAsync(CancellationToken cancellationToken)
     {
         var json = await File.ReadAllTextAsync(Path.Combine(metadataRoot, "regions.json"), cancellationToken);
-        var regions = JsonSerializer.Deserialize<CatalogRegion[]>(json)
-            ?? throw new JsonException("Missing regions snapshot.");
-        if (regions.Any(region => region is null || string.IsNullOrWhiteSpace(region.Id)
-                || !ManifestReader.IsRegionId(region.Id) || string.IsNullOrWhiteSpace(region.Name))
-            || regions.Select(region => region.Id).Distinct(StringComparer.Ordinal).Count() != regions.Length)
-            throw new JsonException("Invalid or duplicate region metadata.");
+        var regions = CatalogMetadataReader.ReadRegions(json);
 
         var datasets = new List<PublishedDataset>();
         var discoveryRoot = Path.Combine(metadataRoot, "geofabrik");
@@ -24,11 +18,7 @@ public sealed class LocalCatalogSource(string metadataRoot, ILogger<LocalCatalog
         {
             var key = Path.GetRelativePath(metadataRoot, path).Replace('\\', '/');
             var manifest = await File.ReadAllTextAsync(path, cancellationToken);
-            try { datasets.Add(ManifestReader.Read(key, manifest)); }
-            catch (JsonException exception)
-            {
-                logger.LogWarning(exception, "Rejected manifest {ManifestKey}", key);
-            }
+            CatalogMetadataReader.AddManifest(datasets, key, manifest, logger);
         }
         return new CatalogSnapshot(regions, datasets);
     }
