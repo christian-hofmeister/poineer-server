@@ -1,10 +1,38 @@
 # Dataset catalog
 
-`GET /api/datasets` returns an array of currently published releases containing
+`GET /api/v1/datasets` returns an array of currently published releases containing
 SQLite and, when available, PMTiles artifacts.
 Region metadata is included in catalog entries. The unused legacy `/api/regions`
-endpoint has been removed; clients use `/api/datasets` for available regions
+endpoint has been removed; clients use `/api/v1/datasets` for available regions
 and their artifacts. The existing dataset metadata DTO remains unchanged.
+
+## API versioning and compatibility
+
+New clients should request `GET /api/v1/datasets`. `GET /api/datasets` remains
+a compatibility alias for v1: it returns the same payload, schema, status codes
+and content types directly, without redirecting. The alias stays bound to v1;
+it will not silently switch to a future major version.
+
+Compatible additions and fixes stay within v1. Clients should tolerate additional
+JSON properties. Breaking changes require a new major URL prefix (for example,
+`/api/v2`) and a documented migration guide, an announced retirement date, and
+a migration period during which both major versions remain available. The
+duration must be documented before retirement is scheduled. No v1 or alias
+retirement is scheduled by this change.
+
+`GET /api/health` remains unversioned for deployment probes. The OpenAPI document
+at `/openapi/v1.json` describes both catalog paths; its document name is separate
+from the URL routing policy. The existing download URL values are preserved on
+both catalog routes; download transport and its route design remain follow-up
+work.
+
+Example request:
+
+```sh
+curl http://localhost:5000/api/v1/datasets
+```
+
+Use the port reported by `dotnet run` for your local instance.
 
 The catalog joins current manifests to `regions.json` by exact, case-sensitive
 region ID. Display records alone never make a dataset available. Invalid or

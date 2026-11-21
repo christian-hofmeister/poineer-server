@@ -8,11 +8,21 @@ public static class CatalogEndpoints
 {
     public static IEndpointRouteBuilder MapCatalogEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/datasets", GetCatalogAsync)
-            .WithName("GetDatasetCatalog")
+        const string description = "Returns validated current releases with SQLite and optional PMTiles artifacts joined to region metadata. Each artifact includes its type, version, size, checksum and download URL. Bounds are null until a geographic source is available. Download URLs reserve the server routes for the separate download transport implementation.";
+
+        MapCatalogRoute(endpoints, "/v1/datasets", "GetDatasetCatalogV1")
+            .WithSummary("Get currently published offline datasets (v1)")
+            .WithDescription(description);
+        MapCatalogRoute(endpoints, "/datasets", "GetDatasetCatalog")
+            .WithSummary("Get currently published offline datasets (compatibility alias)")
+            .WithDescription("Compatibility alias for GET /api/v1/datasets with the same response schema, payload and status codes. New clients should use /api/v1/datasets. " + description);
+        return endpoints;
+    }
+
+    private static RouteHandlerBuilder MapCatalogRoute(IEndpointRouteBuilder endpoints, string pattern, string name) =>
+        endpoints.MapGet(pattern, GetCatalogAsync)
+            .WithName(name)
             .WithTags("Datasets")
-            .WithSummary("Get currently published offline datasets")
-            .WithDescription("Returns validated current releases with SQLite and optional PMTiles artifacts joined to region metadata. Each artifact includes its type, version, size, checksum and download URL. Bounds are null until a geographic source is available. Download URLs reserve the server routes for the separate download transport implementation.")
             .Produces<IReadOnlyCollection<CatalogEntry>>()
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
             .AddOpenApiOperationTransformer((operation, _, _) =>
@@ -22,8 +32,6 @@ public static class CatalogEndpoints
 
                 return Task.CompletedTask;
             });
-        return endpoints;
-    }
 
     private static async Task<IResult> GetCatalogAsync(DatasetCatalog catalog,
         ILogger<DatasetCatalog> logger, CancellationToken cancellationToken)

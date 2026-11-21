@@ -36,7 +36,7 @@ public sealed class BlobCatalogEndpointTests(WebApplicationFactory<Program> fact
         using var host = WithBlobSource(http);
         using var client = host.CreateClient();
 
-        var berlin = Assert.Single((await client.GetFromJsonAsync<CatalogEntry[]>("/api/datasets"))!);
+        var berlin = Assert.Single((await client.GetFromJsonAsync<CatalogEntry[]>("/api/v1/datasets"))!);
         Assert.Equal(RegionId, berlin.Id);
         Assert.Equal("4-abcdef0123456789", berlin.Dataset.Version);
         Assert.Equal(2, berlin.Dataset.Artifacts.Count);
@@ -61,7 +61,7 @@ public sealed class BlobCatalogEndpointTests(WebApplicationFactory<Program> fact
         using var host = WithBlobSource(http);
         using var client = host.CreateClient();
 
-        var response = await client.GetAsync("/api/datasets");
+        var response = await client.GetAsync("/api/v1/datasets");
         if (failingPath == "")
         {
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
