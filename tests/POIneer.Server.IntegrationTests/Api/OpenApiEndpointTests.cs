@@ -20,12 +20,18 @@ public sealed class OpenApiEndpointTests(WebApplicationFactory<Program> factory)
         using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
         var root = document.RootElement;
         var paths = root.GetProperty("paths");
-        Assert.Equal(new[] { "/api/datasets", "/api/health" },
+        Assert.Equal(new[] { "/api/datasets", "/api/health", "/api/v1/datasets" },
             paths.EnumerateObject().Select(property => property.Name).Order());
         Assert.True(paths.GetProperty("/api/health").GetProperty("get")
             .GetProperty("responses").TryGetProperty("200", out _));
 
-        var responses = paths.GetProperty("/api/datasets").GetProperty("get").GetProperty("responses");
+        var canonical = paths.GetProperty("/api/v1/datasets").GetProperty("get");
+        var alias = paths.GetProperty("/api/datasets").GetProperty("get");
+        Assert.Equal("GetDatasetCatalogV1", canonical.GetProperty("operationId").GetString());
+        Assert.Equal("GetDatasetCatalog", alias.GetProperty("operationId").GetString());
+        Assert.Contains("Compatibility alias for GET /api/v1/datasets", alias.GetProperty("description").GetString());
+        var responses = canonical.GetProperty("responses");
+        Assert.Equal(responses.GetRawText(), alias.GetProperty("responses").GetRawText());
         var collection = responses.GetProperty("200").GetProperty("content")
             .GetProperty("application/json").GetProperty("schema");
         var entry = ResolveSchema(root, collection.GetProperty("items"));

@@ -159,7 +159,7 @@ try {
     $expected = Get-Content -Raw $manifestFile.FullName | ConvertFrom-Json
     if ($expected.regionId -cne $regionId) { throw 'Published manifest is for another region.' }
 
-    $catalog = Invoke-RestMethod "$api/api/datasets"
+    $catalog = Invoke-RestMethod "$api/api/v1/datasets"
     $berlin = @($catalog | Where-Object { $_.id -ceq $regionId })
     if ($berlin.Count -ne 1 -or $berlin[0].dataset.version -cne $expected.releaseVersion) {
         throw 'The API does not advertise the published Berlin release.'

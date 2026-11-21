@@ -15,11 +15,13 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
     private readonly WebApplicationFactory<Program> _factory;
     public CatalogEndpointTests(WebApplicationFactory<Program> factory) => _factory = factory;
 
-    [Fact]
-    public async Task GetDatasets_MapsDevelopmentFixture()
+    [Theory]
+    [InlineData("/api/v1/datasets")]
+    [InlineData("/api/datasets")]
+    public async Task GetDatasets_MapsDevelopmentFixture(string path)
     {
         using var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/datasets");
+        var response = await client.GetAsync(path);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var entries = await response.Content.ReadFromJsonAsync<CatalogEntry[]>();
         var berlin = Assert.Single(entries!);
@@ -39,7 +41,7 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             services.AddSingleton<ICatalogSource>(new TwoArtifactSource())));
         using var client = factory.CreateClient();
-        var entries = await client.GetFromJsonAsync<CatalogEntry[]>("/api/datasets");
+        var entries = await client.GetFromJsonAsync<CatalogEntry[]>("/api/v1/datasets");
         var dataset = Assert.Single(entries!).Dataset;
         Assert.Equal("4-abcdef0123456789", dataset.Version);
         Assert.Equal(2, dataset.Artifacts.Count);
@@ -58,7 +60,7 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
         using var client = factory.CreateClient();
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/api/datasets")).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/api/v1/datasets")).StatusCode);
     }
 
     [Fact]
@@ -67,7 +69,7 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             services.AddSingleton<ICatalogSource>(new FailingSource())));
         using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/datasets");
+        var response = await client.GetAsync("/api/v1/datasets");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
         Assert.DoesNotContain("private-path", await response.Content.ReadAsStringAsync());
@@ -79,7 +81,7 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             services.AddSingleton<ICatalogSource>(new EmptySource())));
         using var client = factory.CreateClient();
-        Assert.Empty((await client.GetFromJsonAsync<CatalogEntry[]>("/api/datasets"))!);
+        Assert.Empty((await client.GetFromJsonAsync<CatalogEntry[]>("/api/v1/datasets"))!);
     }
 
     [Fact]
@@ -87,12 +89,38 @@ public sealed class CatalogEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         using var client = _factory.CreateClient();
         using var document = System.Text.Json.JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
-        var responses = document.RootElement.GetProperty("paths").GetProperty("/api/datasets")
+        var responses = document.RootElement.GetProperty("paths").GetProperty("/api/v1/datasets")
             .GetProperty("get").GetProperty("responses");
         Assert.True(responses.TryGetProperty("200", out _));
         var unavailable = responses.GetProperty("503");
         Assert.Contains("insufficient read permissions", unavailable.GetProperty("description").GetString());
         Assert.True(unavailable.GetProperty("content").TryGetProperty("application/problem+json", out _));
+    }
+
+    [Theory]
+    [InlineData("published", HttpStatusCode.OK)]
+    [InlineData("empty", HttpStatusCode.OK)]
+    [InlineData("unavailable", HttpStatusCode.ServiceUnavailable)]
+    public async Task GetDatasets_CompatibilityAliasReturnsSamePayloadAndStatus(string state, HttpStatusCode status)
+    {
+        ICatalogSource source = state switch
+        {
+            "published" => new TwoArtifactSource(),
+            "empty" => new EmptySource(),
+            "unavailable" => new FailingSource(),
+            _ => throw new ArgumentOutOfRangeException(nameof(state))
+        };
+        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.AddSingleton(source)));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var canonical = await client.GetAsync("/api/v1/datasets");
+        var alias = await client.GetAsync("/api/datasets");
+
+        Assert.Equal(status, canonical.StatusCode);
+        Assert.Equal(canonical.StatusCode, alias.StatusCode);
+        Assert.Equal(canonical.Content.Headers.ContentType, alias.Content.Headers.ContentType);
+        Assert.Equal(await canonical.Content.ReadAsStringAsync(), await alias.Content.ReadAsStringAsync());
+        Assert.Null(alias.Headers.Location);
     }
 
     private sealed class TwoArtifactSource : ICatalogSource

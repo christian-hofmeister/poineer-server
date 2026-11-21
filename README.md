@@ -74,7 +74,7 @@ Current:
 - Swagger UI
 - Test project setup
 - Centralized package management
-- Dataset catalog at `GET /api/datasets` with validated manifests from local files or Azure Blob Storage
+- Versioned dataset catalog at `GET /api/v1/datasets` with validated manifests from local files or Azure Blob Storage; `/api/datasets` remains a compatibility alias
 
 See [Dataset catalog](docs/dataset-catalog.md) for configuration, fixture limitations,
 map availability, geographic enrichment and the demand-tracking proposal.
@@ -84,7 +84,6 @@ Planned:
 
 - Dataset metadata
 - Dataset downloads
-- API versioning
 - Rate limiting
 - VPS deployment
 - Scheduled dataset updates
