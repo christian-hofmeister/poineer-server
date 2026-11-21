@@ -127,11 +127,19 @@ OpenAPI endpoint:
 /openapi/v1.json
 ```
 
-Swagger UI:
+ASP.NET Core generates this document in all environments. Swagger UI is available
+only in Development and loads the same document:
 
 ```text
 /swagger
 ```
+
+The former development document route `/swagger/v1/swagger.json` remains an alias
+served by the ASP.NET Core generator. The standalone
+`Swashbuckle.AspNetCore.SwaggerUI` package provides only the viewer; SwaggerGen and
+the umbrella `Swashbuckle.AspNetCore` package are not required. This avoids their
+Microsoft.OpenApi dependency conflict with ASP.NET Core 10. Package versions
+remain managed in `Directory.Packages.props`.
 
 ---
 

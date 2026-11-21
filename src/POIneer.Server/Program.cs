@@ -9,7 +9,6 @@ using POIneer.Server.Infrastructure.Catalog;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IDatasetMetadataProvider, HardcodedDatasetMetadataProvider>();
 builder.Services.AddSingleton<IRegionBoundsSource, ConfiguredRegionBoundsSource>();
 builder.Services.AddSingleton<DatasetCatalog>();
@@ -43,9 +42,8 @@ app.MapOpenApi();
 
 if (app.Environment.IsDevelopment())
 {
-    //
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi("/swagger/{documentName}/swagger.json");
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "POIneer.Server v1"));
 }
 
 app.Run();
