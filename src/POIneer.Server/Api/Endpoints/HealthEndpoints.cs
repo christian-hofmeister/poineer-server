@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace POIneer.Server.Api.Endpoints;
 
 public static class HealthEndpoints
@@ -25,7 +27,9 @@ public static class HealthEndpoints
             Status: "Healthy",
             Service: "POIneer.Server",
             TimestampUtc: DateTimeOffset.UtcNow,
-            Version: "1.0.0");
+            Version: typeof(HealthEndpoints).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+                .InformationalVersion.Split('+')[0]);
 
         return Task.FromResult(Results.Ok(response));
     }
