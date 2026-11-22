@@ -26,6 +26,31 @@ pipeline {
             }
         }
 
+        stage('Resolve Release Version') {
+            steps {
+                script {
+                    env.BUILD_VERSION = '0.3.0-dev'
+                    if (env.TAG_NAME) {
+                        if (!(env.TAG_NAME ==~ /v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)/)) {
+                            error('Release tags must match vMAJOR.MINOR.PATCH without leading zeros.')
+                        }
+                        sh '''
+                            set -eu
+                            if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+                                git fetch --unshallow origin
+                            fi
+                            git fetch origin +refs/heads/main:refs/remotes/origin/main
+                            git fetch origin "refs/tags/$TAG_NAME"
+                            test "$(git rev-parse HEAD)" = "$(git rev-parse 'FETCH_HEAD^{commit}')"
+                            git merge-base --is-ancestor HEAD refs/remotes/origin/main
+                        '''
+                        env.BUILD_VERSION = env.TAG_NAME.substring(1)
+                        env.IMAGE_TAG = env.TAG_NAME
+                    }
+                }
+            }
+        }
+
         stage('Show .NET Info') {
             steps {
                 sh 'dotnet --info'
@@ -43,7 +68,7 @@ pipeline {
                 sh '''
                     dotnet build "$SOLUTION_FILE" \
                         --configuration "$CONFIGURATION" \
-                        --no-restore
+                        --no-restore -p:Version="$BUILD_VERSION"
                 '''
             }
         }
@@ -91,13 +116,22 @@ pipeline {
             }
         }
 
-        stage('Dummy Deployment - Release') {
+        stage('Build Release Container') {
             when {
-                branch pattern: 'release/.+', comparator: 'REGEXP'
+                buildingTag()
             }
             steps {
-                echo 'Release branch detected.'
-                echo 'Dummy deployment stage for release. No deployment is executed yet.'
+                sh 'docker build --build-arg VERSION="$BUILD_VERSION" --tag "poineer-server:$IMAGE_TAG" .'
+            }
+        }
+
+        stage('Dummy Deployment - Release') {
+            when {
+                buildingTag()
+            }
+            steps {
+                echo "Validated release ${env.TAG_NAME}; container poineer-server:${env.IMAGE_TAG} is ready."
+                echo 'Dummy deployment stage for release. Configure a release target before enabling deployment.'
             }
         }
 
