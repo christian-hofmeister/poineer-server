@@ -18,6 +18,20 @@ architecture.
 - Use records and value objects where they make a concept clearer.
 - Introduce abstractions when they solve a concrete problem.
 
+## Markdown
+
+- Keep new and edited Markdown consistent with markdownlint rules. Use the
+  repository configuration when available.
+- Surround headings, lists, and fenced code blocks with a blank line.
+- Keep heading text unique within a document; qualify repeated changelog
+  headings with the release version when needed.
+- Avoid consecutive blank lines and trailing whitespace. End files with a
+  single newline and no trailing blank lines.
+- Specify a language for fenced code blocks, using `text` for plain text.
+- Check edited Markdown before finishing. Run markdownlint when available;
+  otherwise inspect formatting and run `git diff --check`. State which checks
+  were performed rather than claiming a lint pass without running the linter.
+
 ## Architecture
 
 - **API** defines Minimal API endpoints and OpenAPI metadata. Endpoints handle
