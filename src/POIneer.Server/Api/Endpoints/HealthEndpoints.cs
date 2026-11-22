@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace POIneer.Server.Api.Endpoints;
 
 public static class HealthEndpoints
@@ -10,8 +12,9 @@ public static class HealthEndpoints
 
         group.MapGet("", GetHealthAsync)
             .WithName("GetHealth")
-            .WithSummary("Returns the health status of the API.")
+            .WithSummary("Get API health status")
             .WithDescription("Simple health endpoint for monitoring and uptime checks.")
+            .WithTags("Health")
             .Produces<HealthResponse>(StatusCodes.Status200OK);
 
         return endpoints;
@@ -24,7 +27,9 @@ public static class HealthEndpoints
             Status: "Healthy",
             Service: "POIneer.Server",
             TimestampUtc: DateTimeOffset.UtcNow,
-            Version: "1.0.0");
+            Version: typeof(HealthEndpoints).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+                .InformationalVersion.Split('+')[0]);
 
         return Task.FromResult(Results.Ok(response));
     }

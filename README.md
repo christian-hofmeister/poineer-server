@@ -74,13 +74,17 @@ Current:
 - Swagger UI
 - Test project setup
 - Centralized package management
+- Versioned dataset catalog at `GET /api/v1/datasets` with validated manifests from local files or Azure Blob Storage; `/api/datasets` remains a compatibility alias
+
+See [Dataset catalog](docs/dataset-catalog.md) for configuration, fixture limitations,
+map availability, geographic enrichment and the demand-tracking proposal.
+See [Azure development deployment](docs/azure-dev.md) for the Container Apps setup and Berlin smoke test.
+See [Tag-based releases](docs/releases.md) for Jenkins configuration and versioning.
 
 Planned:
 
-- Region endpoints
 - Dataset metadata
 - Dataset downloads
-- API versioning
 - Rate limiting
 - VPS deployment
 - Scheduled dataset updates
@@ -123,19 +127,31 @@ OpenAPI endpoint:
 /openapi/v1.json
 ```
 
-Swagger UI:
+ASP.NET Core generates this document in all environments. Swagger UI is available
+only in Development and loads the same document:
 
 ```text
 /swagger
 ```
+
+The former development document route `/swagger/v1/swagger.json` remains an alias
+served by the ASP.NET Core generator. The standalone
+`Swashbuckle.AspNetCore.SwaggerUI` package provides only the viewer; SwaggerGen and
+the umbrella `Swashbuckle.AspNetCore` package are not required. This avoids their
+Microsoft.OpenApi dependency conflict with ASP.NET Core 10. Package versions
+remain managed in `Directory.Packages.props`.
 
 ---
 
 ## Health Endpoint
 
 ```text
-GET /health
+GET /api/health
 ```
+
+The `version` field reports the running server's build version. API contract
+versions such as `/api/v1` are independent of the server version; the health
+endpoint does not use an API version segment.
 
 Example response:
 
@@ -144,7 +160,7 @@ Example response:
   "status": "Healthy",
   "service": "POIneer.Server",
   "timestampUtc": "2026-05-17T09:08:56.2548963+00:00",
-  "version": "0.1.0"
+  "version": "0.3.0-dev"
 }
 ```
 

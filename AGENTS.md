@@ -2,99 +2,129 @@
 
 ## Project
 
-POIneer.Server is the backend API for the POIneer ecosystem.
+POIneer.Server is the backend API for the POIneer ecosystem. It exposes health
+information and region metadata so clients can discover available offline POI
+regions. Future endpoints will provide dataset metadata and download information.
 
-It provides metadata, health/status information and future download-related endpoints for offline POI datasets.
-
-The project uses modern .NET, Minimal APIs and a lightweight hexagonal architecture approach.
+The API uses .NET, ASP.NET Core Minimal APIs, and a lightweight hexagonal
+architecture.
 
 ## Language and Style
 
-- Code comments must be written in English.
-- Documentation files should be written in English.
-- Keep code simple, explicit and maintainable.
-- Prefer clarity over clever abstractions.
-- Avoid unnecessary enterprise-style boilerplate.
+- Write code comments and repository documentation in English.
+- Keep code simple, explicit, and maintainable.
+- Follow the conventions in the surrounding code and reuse existing components
+  where they fit.
+- Use records and value objects where they make a concept clearer.
+- Introduce abstractions when they solve a concrete problem.
+
+## Markdown
+
+- Keep new and edited Markdown consistent with markdownlint rules. Use the
+  repository configuration when available.
+- Surround headings, lists, and fenced code blocks with a blank line.
+- Keep heading text unique within a document; qualify repeated changelog
+  headings with the release version when needed.
+- Avoid consecutive blank lines and trailing whitespace. End files with a
+  single newline and no trailing blank lines.
+- Specify a language for fenced code blocks, using `text` for plain text.
+- Check edited Markdown before finishing. Run markdownlint when available;
+  otherwise inspect formatting and run `git diff --check`. State which checks
+  were performed rather than claiming a lint pass without running the linter.
 
 ## Architecture
 
-Use a lightweight hexagonal architecture:
+- **API** defines Minimal API endpoints and OpenAPI metadata. Endpoints handle
+  HTTP binding and validation, call application use cases, and map results to
+  HTTP responses.
+- **Application** contains use cases and orchestration. It depends on Domain and
+  defines the ports its use cases need.
+- **Domain** contains core domain concepts, entities, and value objects. It
+  depends on no other project layer.
+- **Infrastructure** implements application ports for external dependencies.
+- **Contracts** contains public request and response DTOs. The API maps between
+  these DTOs and application inputs and results.
 
-    Api -> Application -> Domain
-              ↑
-       Infrastructure
+Keep business rules in Application or Domain. Wire application ports to
+infrastructure implementations in the API composition root.
 
-### Layers
+## API Design
 
-- Api: Minimal API endpoints, HTTP mapping, OpenAPI metadata.
-- Application: Use cases, orchestration, ports/abstractions.
-- Domain: Core domain concepts, entities, value objects.
-- Infrastructure: Implementations for external dependencies.
-- Contracts: Public request/response DTOs.
-
-## Rules
-
-- Do not put business logic into endpoints.
-- Endpoints should only map HTTP requests/responses and call application logic.
-- Domain must not depend on infrastructure or API.
-- Prefer small records/value objects where they improve meaning.
-- Avoid premature abstractions.
-- Add tests for new behavior.
-- Keep public API contracts stable and explicit.
+- Use lowercase, plural resource names for collection routes, such as
+  `GET /api/regions`. Use path parameters to identify individual resources.
+- Use HTTP methods to express operations. Use query parameters for filtering,
+  search, sorting, and pagination when a collection endpoint supports them.
+- Document supported query parameters, allowed values, defaults, and limits in
+  OpenAPI. Return `400 Bad Request` for invalid values of supported parameters.
+- Return `200 OK` with an empty collection when a valid query has no matches.
+  Return `404 Not Found` when a requested individual resource does not exist.
+- Use Problem Details for API errors.
+- Define explicit request and response DTOs that expose only the information
+  clients need. Follow the existing convention for explicit JSON property names
+  in public contracts.
+- Preserve existing public routes and response contracts within a published
+  major API version. Introduce a new major version for breaking changes and
+  document the migration path.
 
 ## Testing
 
-Use xUnit.
+Use xUnit. Add or update tests for new behavior and bug fixes at the narrowest
+appropriate level.
 
-Test projects:
+| Test project | Focus |
+| --- | --- |
+| `tests/POIneer.Server.UnitTests` | Domain rules and application behavior |
+| `tests/POIneer.Server.IntegrationTests` | HTTP endpoint behavior and infrastructure integration |
+| `tests/POIneer.Server.ContractTests` | Public API response compatibility, including JSON shape and property names |
 
-    tests/POIneer.Server.UnitTests
-    tests/POIneer.Server.IntegrationTests
-    tests/POIneer.Server.ContractTests
-
-Guidelines:
-
-- Unit tests should focus on domain/application behavior.
-- Integration tests should verify HTTP endpoints and infrastructure integration.
-- Contract tests should be used for public API response compatibility when needed.
+Cover changes to public response shapes with contract tests. Run the relevant
+tests after making a change and run the full suite when a change affects
+multiple layers or shared behavior.
 
 ## Commands
 
-Restore:
+Run these commands from the repository root.
 
-    dotnet restore POIneer.Server.slnx
+**Restore**
 
-Build:
+```sh
+dotnet restore POIneer.Server.slnx
+```
 
-    dotnet build POIneer.Server.slnx
+**Build**
 
-Test:
+```sh
+dotnet build POIneer.Server.slnx
+```
 
-    dotnet test POIneer.Server.slnx
+**Test**
 
-Run API:
+```sh
+dotnet test POIneer.Server.slnx
+```
 
-    dotnet run --project src/POIneer.Server
+**Run the API**
+
+```sh
+dotnet run --project src/POIneer.Server
+```
 
 ## Dependencies
 
-This repository uses Central Package Management.
-
-Package versions belong in:
-
-    Directory.Packages.props
-
-Project files should reference packages without explicit versions.
+Use Central Package Management. Define package versions in
+`Directory.Packages.props` and omit versions from `PackageReference` entries in
+project files.
 
 ## Branching
 
-- main is the stable branch.
-- develop is used for active development.
-- Feature work should be done on feature branches and merged via pull requests.
+- `main` is the stable branch.
+- `develop` is the integration branch for active development.
+- Base feature branches on `develop` and target `develop` when opening feature
+  pull requests.
 
 ## Current Priorities
 
-- Keep the API small and clean.
-- Provide useful OpenAPI documentation.
-- Add health and region metadata endpoints.
-- Prepare the server for future dataset metadata and download endpoints.
+- Keep the API small and focused on offline dataset discovery and delivery.
+- Maintain the health and region metadata endpoints and their OpenAPI documentation.
+- Extend the API with dataset metadata and download information as client needs
+  become concrete.
