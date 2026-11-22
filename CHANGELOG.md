@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - Unreleased
+Historical entries for 0.1.0 and 0.2.0 were reconstructed from their Git tags
+and source history. Release dates follow the annotated tag dates.
+
+## [0.3.0] - 2026-11-22
 
 ### Added
 
@@ -34,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as the default for local and branch builds.
 - Replaced release-branch deployment selection with tag-based selection in
   Jenkins while preserving branch and pull request builds.
+- Replaced the legacy `GET /health` string response with the structured
+  `GET /api/health` response. Monitoring clients must update the path and parse
+  the JSON object instead of a string.
 - Updated runtime, Azure SDK, OpenAPI and test dependencies.
 
 ### Removed
@@ -53,27 +59,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   invalid catalog sources return `503` Problem Details; a valid source with no
   published releases returns `200` with an empty array.
 
+## [0.2.0] - 2025-08-07
+
+### Added in 0.2.0
+
+- `GET /health` endpoint returning the JSON string `"API is running"`.
+- In-memory HTTP integration tests using `WebApplicationFactory` and a dedicated
+  test factory, plus additional SQLite service tests.
+- Flyway configuration and an initial SQL migration for the SQLite POI schema.
+- Dependabot configuration for NuGet updates and a local .NET tool manifest
+  including `dotnet-outdated-tool`.
+- Project documentation covering development setup and commit conventions.
+
+### Changed in 0.2.0
+
+- Moved the server into `src/` and tests into `tests/`, renamed the test project,
+  and updated solution and pipeline paths.
+- Disabled HTTPS redirection in the `Testing` environment to support in-memory
+  API tests.
+- Extended Jenkins with workspace cleanup, local tool restoration and outdated
+  package checks, retaining placeholder deployment steps.
+
 ## [0.1.0] - 2025-08-02
 
 ### Added in 0.1.0
 
-- Initial version of POIneer.Server based on .NET 9
-- SQLite integration for offline POI storage
-- Dummy data generator for POIs (GenerateDummySQLite)
-- REST API for querying POIs
-- Swagger (OpenAPI) integration for interactive API documentation
-- Project structure with modular service layer
-- First unit tests for SQLite access
-- Jenkins Multibranch Pipeline integration
-- GitHub SSH deployment setup for Jenkins
-- Webhook-based triggering from GitHub to Jenkins
-- Development and release branching strategy established
+- Initial ASP.NET Core controller-based API on .NET 9.
+- `GET /api/regions` for region metadata from a local JSON file and
+  `GET /api/regions/{region}/sqlite` for serving existing SQLite files.
+- SQLite POI model and a service for generating a database with sample POIs;
+  generation was not enabled automatically at application startup.
+- Unit tests for SQLite database generation.
+- Swagger/OpenAPI documentation and an interactive UI in Development and Staging.
+- Jenkins pipeline for restore, build and tests, with informational branch-based
+  placeholders for future deployments.
 
-### Planned at 0.1.0
-
-- Integration tests for REST API endpoints
-- Admin dashboard (React) for managing OSM regions
-- Automatic download and processing of Geofabrik updates
-- Jenkins deployment to staging and production environments
-- Offline map tile support for the Android app
-- Mobile client integration with region-based POI sync
+[0.3.0]: https://github.com/christian-hofmeister/poineer-server/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/christian-hofmeister/poineer-server/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/christian-hofmeister/poineer-server/tree/v0.1.0
