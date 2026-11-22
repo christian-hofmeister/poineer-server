@@ -41,6 +41,8 @@ function Invoke-ReleaseCommand {
             $process.Kill($true)
             throw "$Command command timed out."
         }
+        # Drain stderr completely, but do not expose potentially sensitive output.
+        $null = $stderr.GetAwaiter().GetResult()
         if ($process.ExitCode -ne 0) {
             throw "$Command command failed (exit $($process.ExitCode)). Check permissions, connectivity and resource state."
         }
