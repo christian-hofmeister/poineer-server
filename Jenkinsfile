@@ -16,6 +16,14 @@ pipeline {
         SOLUTION_FILE = 'POIneer.Server.slnx'
         CONFIGURATION = 'Release'
 
+        AZURE_TENANT_ID = '441e2e97-9f7c-48cb-bad8-64680212588d'
+        AZURE_SUBSCRIPTION_ID = 'c8e5e957-4471-4781-8530-d2f35c8f44e2'
+        ACR_NAME = 'poineerdevacr'
+        ACR_LOGIN_SERVER = 'poineerdevacr.azurecr.io'
+        IMAGE_REPOSITORY = 'poineer-server'
+        AZURE_RESOURCE_GROUP = 'rg-poineer-dev'
+        AZURE_CONTAINER_APP = 'poineer-api-dev'
+
         NUGET_PACKAGES = "${WORKSPACE}/.nuget/packages"
     }
 
@@ -106,6 +114,12 @@ pipeline {
             }
         }
 
+        stage('Test Release Orchestration') {
+            steps {
+                sh 'pwsh -NoProfile -File scripts/Test-ReleaseDeployment.ps1'
+            }
+        }
+
         stage('Dummy Deployment - Develop') {
             when {
                 branch 'develop'
@@ -125,13 +139,20 @@ pipeline {
             }
         }
 
-        stage('Dummy Deployment - Release') {
+        stage('Publish and Deploy Release') {
             when {
                 buildingTag()
             }
             steps {
-                echo "Validated release ${env.TAG_NAME}; container poineer-server:${env.IMAGE_TAG} is ready."
-                echo 'Dummy deployment stage for release. Configure a release target before enabling deployment.'
+                timeout(time: 20, unit: 'MINUTES') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'azure-poineer-server-deploy',
+                        usernameVariable: 'AZURE_CLIENT_ID',
+                        passwordVariable: 'AZURE_CLIENT_SECRET'
+                    )]) {
+                        sh 'pwsh -NoProfile -File scripts/Deploy-Release.ps1'
+                    }
+                }
             }
         }
 
