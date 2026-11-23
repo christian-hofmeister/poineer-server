@@ -10,6 +10,8 @@ and source history. Release dates follow the annotated tag dates.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-23
+
 ### Deployment automation
 
 - Publish validated release images to Azure Container Registry and lock their
